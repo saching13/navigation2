@@ -70,8 +70,63 @@ V_Cell g_unknown;
 
 rclcpp::Node::SharedPtr g_node;
 
-rclcpp::Publisher<sensor_msgs::msg::PointCloud>::SharedPtr pub_marked;
-rclcpp::Publisher<sensor_msgs::msg::PointCloud>::SharedPtr pub_unknown;
+rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr pub_marked;
+rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr pub_unknown;
+
+void pointCloud2Helper(std::unique_ptr<sensor_msgs::msg::PointCloud2>& cloud, uint32_t num_channels, std_msgs::msg::Header header, V_Cell& g_cells){
+    // cloud->header.frame_id = frame_id;
+    // cloud->header.stamp = stamp;
+    cloud->header = header;
+    cloud->width = num_channels;
+    cloud->height = 1;
+    cloud->fields.resize(6); // x,y,z,r,g,b
+    cloud->is_dense = true; // are there no invalid points in the cloud ?
+    cloud->is_bigendian = false; // is it bigendian ?
+    int offset = 0;
+
+    for(size_t i = 0; i < cloud->fields.size(); ++i){
+      cloud->fields[i].offset   = offset;
+      cloud->fields[i].count    = 1; 
+      if (i < 3){
+        cloud->fields[i].datatype = sensor_msgs::msg::PointField::FLAOT32;
+        offset += 4;
+      }
+      else{
+        cloud->fields[i].datatype = sensor_msgs::msg::PointField::UINT8;
+        offset++;
+      }
+    }
+
+    cloud->fields[0].name = "x"; 
+    cloud->fields[1].name = "y"; 
+    cloud->fields[2].name = "z";
+
+    cloud->fields[3].name = "r";
+    cloud->fields[4].name = "g";
+    cloud->fields[5].name = "b";
+
+    cloud->point_step = offset;
+    cloud->row_step   = cloud->point_step * cloud->width;
+
+    for (uint32_t i = 0; i < num_channels; ++i) {
+      Cell & c = g_cells[i];
+
+      memcpy(&cloud->data[i * cloud->point_step + cloud->fields[0].offset], &c.x, sizeof(float));
+      memcpy(&cloud->data[i * cloud->point_step + cloud->fields[1].offset], &c.y, sizeof(float));
+      memcpy(&cloud->data[i * cloud->point_step + cloud->fields[2].offset], &c.z, sizeof(float));
+
+      uint8_t r = g_colors_r[c.status] * 255.0;
+      uint8_t g = g_colors_g[c.status] * 255.0;
+      uint8_t b = g_colors_b[c.status] * 255.0;
+      // uint32_t a = g_colors_a[c.status] * 255.0;
+      memcpy(&cloud->data[i * cloud->point_step + cloud->fields[3].offset], &r, sizeof(uint8_t));
+      memcpy(&cloud->data[i * cloud->point_step + cloud->fields[4].offset], &g, sizeof(uint8_t));
+      memcpy(&cloud->data[i * cloud->point_step + cloud->fields[5].offset], &b, sizeof(uint8_t));
+
+    }
+
+}
+
 
 void voxelCallback(const nav2_msgs::msg::VoxelGrid::ConstSharedPtr grid)
 {
@@ -133,65 +188,78 @@ void voxelCallback(const nav2_msgs::msg::VoxelGrid::ConstSharedPtr grid)
     }
   }
 
+  std_msgs::msg::Header pcl_header;
+  pcl_header.frame_id = frame_id;
+  pcl_header.stamp = stamp;
+  
   {
-    auto cloud = std::make_unique<sensor_msgs::msg::PointCloud>();
-    cloud->points.resize(num_marked);
-    cloud->channels.resize(1);
-    cloud->channels[0].values.resize(num_marked);
-    cloud->channels[0].name = "rgb";
-    cloud->header.frame_id = frame_id;
-    cloud->header.stamp = stamp;
+    //  num_marked represents (x,y,z) so we need to  num_marked*3 + num_marked*3(for rgb unsigned char)
 
-    sensor_msgs::msg::ChannelFloat32 & chan = cloud->channels[0];
-    for (uint32_t i = 0; i < num_marked; ++i) {
-      geometry_msgs::msg::Point32 & p = cloud->points[i];
-      float & cval = chan.values[i];
-      Cell & c = g_marked[i];
+    // auto cloud = std::make_unique<sensor_msgs::msg::PointCloud>();
+    // cloud->points.resize(num_marked);
+    // cloud->channels.resize(1);
+    // cloud->channels[0].values.resize(num_marked);
+    // cloud->channels[0].name = "rgb";
+    // cloud->header.frame_id = frame_id;
+    // cloud->header.stamp = stamp;
 
-      p.x = c.x;
-      p.y = c.y;
-      p.z = c.z;
+    // sensor_msgs::msg::ChannelFloat32 & chan = cloud->channels[0];
+    // for (uint32_t i = 0; i < num_marked; ++i) {
+    //   geometry_msgs::msg::Point32 & p = cloud->points[i];
+    //   float & cval = chan.values[i];
+    //   Cell & c = g_marked[i];
 
-      uint32_t r = g_colors_r[c.status] * 255.0;
-      uint32_t g = g_colors_g[c.status] * 255.0;
-      uint32_t b = g_colors_b[c.status] * 255.0;
-      // uint32_t a = g_colors_a[c.status] * 255.0;
+    //   p.x = c.x;
+    //   p.y = c.y;
+    //   p.z = c.z;
 
-      uint32_t col = (r << 16) | (g << 8) | b;
-      memcpy(&cval, &col, sizeof col);
-    }
+    //   uint32_t r = g_colors_r[c.status] * 255.0;
+    //   uint32_t g = g_colors_g[c.status] * 255.0;
+    //   uint32_t b = g_colors_b[c.status] * 255.0;
+    //   // uint32_t a = g_colors_a[c.status] * 255.0;
 
+    //   uint32_t col = (r << 16) | (g << 8) | b;
+    //   memcpy(&cval, &col, sizeof col);
+    // }
+
+    // cloud->points.resize(num_marked);
+    // cloud->channels.resize(1);
+    // cloud->channels[0].values.resize(num_marked);
+    // cloud->channels[0].name = "rgb";
+    
+
+    auto cloud = std::make_unique<sensor_msgs::msg::PointCloud2>();
+    pointCloud2Helper(cloud, num_marked, pcl_header, g_marked);
     pub_marked->publish(std::move(cloud));
   }
 
   {
     auto cloud = std::make_unique<sensor_msgs::msg::PointCloud>();
-    cloud->points.resize(num_unknown);
-    cloud->channels.resize(1);
-    cloud->channels[0].values.resize(num_unknown);
-    cloud->channels[0].name = "rgb";
-    cloud->header.frame_id = frame_id;
-    cloud->header.stamp = stamp;
+    // cloud->points.resize(num_unknown);
+    // cloud->channels.resize(1);
+    // cloud->channels[0].values.resize(num_unknown);
+    // cloud->channels[0].name = "rgb";
+    // cloud->header.frame_id = frame_id;
+    // cloud->header.stamp = stamp;
 
-    sensor_msgs::msg::ChannelFloat32 & chan = cloud->channels[0];
-    for (uint32_t i = 0; i < num_unknown; ++i) {
-      geometry_msgs::msg::Point32 & p = cloud->points[i];
-      float & cval = chan.values[i];
-      Cell & c = g_unknown[i];
+    // sensor_msgs::msg::ChannelFloat32 & chan = cloud->channels[0];
+    // for (uint32_t i = 0; i < num_unknown; ++i) {
+    //   Cell & c = g_unknown[i];
 
-      p.x = c.x;
-      p.y = c.y;
-      p.z = c.z;
+    //   p.x = c.x;
+    //   p.y = c.y;
+    //   p.z = c.z;
 
-      uint32_t r = g_colors_r[c.status] * 255.0;
-      uint32_t g = g_colors_g[c.status] * 255.0;
-      uint32_t b = g_colors_b[c.status] * 255.0;
-      // uint32_t a = g_colors_a[c.status] * 255.0;
+    //   uint32_t r = g_colors_r[c.status] * 255.0;
+    //   uint32_t g = g_colors_g[c.status] * 255.0;
+    //   uint32_t b = g_colors_b[c.status] * 255.0;
+    //   // uint32_t a = g_colors_a[c.status] * 255.0;
 
-      uint32_t col = (r << 16) | (g << 8) | b;
-      memcpy(&cval, &col, sizeof col);
-    }
+    //   uint32_t col = (r << 16) | (g << 8) | b;
+    //   memcpy(&cval, &col, sizeof col);
+    // }
 
+    pointCloud2Helper(cloud, num_unknown, pcl_header, g_unknown);
     pub_unknown->publish(std::move(cloud));
   }
 

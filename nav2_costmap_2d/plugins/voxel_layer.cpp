@@ -96,7 +96,7 @@ void VoxelLayer::onInitialize()
     voxel_pub_->on_activate();
   }
 
-  clearing_endpoints_pub_ = node->create_publisher<sensor_msgs::msg::PointCloud>(
+  clearing_endpoints_pub_ = node->create_publisher<sensor_msgs::msg::PointCloud2>(
     "clearing_endpoints", custom_qos);
 
   unknown_threshold_ += (VOXEL_BITS - size_z_);
@@ -302,7 +302,26 @@ void VoxelLayer::raytraceFreespace(
   double * max_x,
   double * max_y)
 {
-  auto clearing_endpoints_ = std::make_unique<sensor_msgs::msg::PointCloud>();
+  auto clearing_endpoints_ = std::make_unique<sensor_msgs::msg::PointCloud2>();
+  clearing_endpoints_->width = 0;
+  // clearing_endpoints_->height = 1;
+  clearing_endpoints_->fields.resize(3);
+  clearing_endpoints_->is_dense = true // are there no invalid points in the cloud ?
+  clearing_endpoints_->is_bigendian = false;
+  int offset = 0;
+
+  for(size_t i = 0; i < cloud->fields.size(); ++i, offset += 4){
+    clearing_endpoints_->fields[i].offset   = offset;
+    clearing_endpoints_->fields[i].count    = 1; 
+    clearing_endpoints_->fields[i].datatype = sensor_msgs::msg::PointField::FLAOT32;
+  }
+
+  clearing_endpoints_->fields[0].name = "x"; 
+  clearing_endpoints_->fields[1].name = "y"; 
+  clearing_endpoints_->fields[2].name = "z";
+  clearing_endpoints_->point_step = offset;
+    // cloud->row_step   = cloud->point_step * cloud->width;
+
 
   size_t clearing_observation_cloud_size = clearing_observation.cloud_->height *
     clearing_observation.cloud_->width;
@@ -334,8 +353,8 @@ void VoxelLayer::raytraceFreespace(
   }
 
   if (publish_clearing_points) {
-    clearing_endpoints_->points.clear();
-    clearing_endpoints_->points.reserve(clearing_observation_cloud_size);
+    clearing_endpoints_->data.clear();
+    clearing_endpoints_->data.reserve(clearing_observation_cloud_size * clearing_endpoints_->point_step);
   }
 
   // we can pre-compute the enpoints of the map outside of the inner loop... we'll need these later
@@ -414,16 +433,24 @@ void VoxelLayer::raytraceFreespace(
         max_y);
 
       if (publish_clearing_points) {
-        geometry_msgs::msg::Point32 point;
-        point.x = wpx;
-        point.y = wpy;
-        point.z = wpz;
-        clearing_endpoints_->points.push_back(point);
+        size_t idx = clearing_endpoints_->data.size();
+        clearing_endpoints_->data.resize(idx + clearing_endpoints_->point_step);
+        // geometry_msgs::msg::Point32 point;
+        // point.x = wpx;
+        // point.y = wpy;
+        // point.z = wpz;
+        memcpy(&clearing_endpoints_->data[idx + clearing_endpoints_->fields[0].offset], &wpx, sizeof(float));
+        memcpy(&clearing_endpoints_->data[idx + clearing_endpoints_->fields[1].offset], &wpy, sizeof(float));
+        memcpy(&clearing_endpoints_->data[idx + clearing_endpoints_->fields[2].offset], &wpz, sizeof(float));
+        clearing_endpoints_->width++;
+        // clearing_endpoints_->points.push_back(point);
       }
     }
   }
 
   if (publish_clearing_points) {
+    if(clearing_endpoints_->width > 0) clearing_endpoints_->height = 1;
+    clearing_endpoints_->row_step = clearing_endpoints_->point_step * clearing_endpoints_->width;
     clearing_endpoints_->header.frame_id = global_frame_;
     clearing_endpoints_->header.stamp = clearing_observation.cloud_->header.stamp;
 

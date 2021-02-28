@@ -166,7 +166,7 @@ public:
    *
    * @param pc PointCloud to add channels to
    */
-  virtual void addCriticVisualization(sensor_msgs::msg::PointCloud &) {}
+  virtual void addCriticVisualization(sensor_msgs::msg::PointCloud2 &) {}
 
   std::string getName()
   {
