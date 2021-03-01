@@ -122,7 +122,7 @@ protected:
   std::shared_ptr<LifecyclePublisher<nav_msgs::msg::Path>> transformed_pub_;
   std::shared_ptr<LifecyclePublisher<nav_msgs::msg::Path>> local_pub_;
   std::shared_ptr<LifecyclePublisher<visualization_msgs::msg::MarkerArray>> marker_pub_;
-  std::shared_ptr<LifecyclePublisher<sensor_msgs::msg::PointCloud>> cost_grid_pc_pub_;
+  std::shared_ptr<LifecyclePublisher<sensor_msgs::msg::PointCloud2>> cost_grid_pc_pub_;
 
   nav2_util::LifecycleNode::SharedPtr node_;
   std::string plugin_name_;

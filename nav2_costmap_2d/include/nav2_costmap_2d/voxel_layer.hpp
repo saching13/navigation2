@@ -46,7 +46,7 @@
 #include <nav2_msgs/msg/voxel_grid.hpp>
 #include <sensor_msgs/msg/laser_scan.hpp>
 #include <laser_geometry/laser_geometry.hpp>
-#include <sensor_msgs/msg/point_cloud.hpp>
+// #include <sensor_msgs/msg/point_cloud.hpp>
 #include <sensor_msgs/msg/point_cloud2.hpp>
 #include <message_filters/subscriber.h>
 #include <nav2_costmap_2d/obstacle_layer.hpp>
@@ -98,7 +98,7 @@ private:
   nav2_voxel_grid::VoxelGrid voxel_grid_;
   double z_resolution_, origin_z_;
   int unknown_threshold_, mark_threshold_, size_z_;
-  rclcpp::Publisher<sensor_msgs::msg::PointCloud>::SharedPtr clearing_endpoints_pub_;
+  rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr clearing_endpoints_pub_;
 
   inline bool worldToMap3DFloat(
     double wx, double wy, double wz, double & mx, double & my,
