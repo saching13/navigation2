@@ -92,22 +92,23 @@ bool BaseObstacleCritic::isValidCost(const unsigned char cost)
          cost != nav2_costmap_2d::NO_INFORMATION;
 }
 
-void BaseObstacleCritic::addCriticVisualization(sensor_msgs::msg::PointCloud2 & pc)
+void BaseObstacleCritic::addCriticVisualization(std::vector<std::pair<std::string, std::vector<float>>> & cost_channels)
 {
-  sensor_msgs::msg::ChannelFloat32 grid_scores;
-  grid_scores.name = name_;
+  std::pair<std::string, std::vector<float>> grid_scores;
+  grid_scores.first = name_;
 
   unsigned int size_x = costmap_->getSizeInCellsX();
   unsigned int size_y = costmap_->getSizeInCellsY();
-  grid_scores.values.resize(size_x * size_y);
+  grid_scores.second.resize(size_x * size_y);
   unsigned int i = 0;
   for (unsigned int cy = 0; cy < size_y; cy++) {
     for (unsigned int cx = 0; cx < size_x; cx++) {
-      grid_scores.values[i] = costmap_->getCost(cx, cy);
+      grid_scores.second[i] = costmap_->getCost(cx, cy);
       i++;
     }
   }
-  pc.channels.push_back(grid_scores);
-}
+  // This works with the assumption that multiple critics doesn't have same name. Is that the fact ?
+  cost_channels.push_back(grid_scores); 
+  }
 
 }  // namespace dwb_critics

@@ -107,21 +107,47 @@ void pointCloud2Helper(std::unique_ptr<sensor_msgs::msg::PointCloud2>& cloud, ui
 
     cloud->point_step = offset;
     cloud->row_step   = cloud->point_step * cloud->width;
-
+    cloud->data.resize(cloud->row_step * cloud->height);
+    sensor_msgs::PointCloud2Iterator<float> iter_x(*cloud, "x");
+    sensor_msgs::PointCloud2Iterator<float> iter_y(*cloud, "y");
+    sensor_msgs::PointCloud2Iterator<float> iter_z(*cloud, "z");
+    
+    sensor_msgs::PointCloud2Iterator<uint8_t> iter_r(*cloud, "r");
+    sensor_msgs::PointCloud2Iterator<uint8_t> iter_g(*cloud, "g");
+    sensor_msgs::PointCloud2Iterator<uint8_t> iter_b(*cloud, "b");
+    
     for (uint32_t i = 0; i < num_channels; ++i) {
       Cell & c = g_cells[i];
 
-      memcpy(&cloud->data[i * cloud->point_step + cloud->fields[0].offset], &c.x, sizeof(float));
-      memcpy(&cloud->data[i * cloud->point_step + cloud->fields[1].offset], &c.y, sizeof(float));
-      memcpy(&cloud->data[i * cloud->point_step + cloud->fields[2].offset], &c.z, sizeof(float));
+      *iter_x = c.x;
+      *iter_y = c.y;
+      *iter_z = c.z;
+      
+      *iter_r = g_colors_r[c.status] * 255.0;
+      *iter_g = g_colors_g[c.status] * 255.0;
+      *iter_b = g_colors_b[c.status] * 255.0;
 
-      uint8_t r = g_colors_r[c.status] * 255.0;
-      uint8_t g = g_colors_g[c.status] * 255.0;
-      uint8_t b = g_colors_b[c.status] * 255.0;
+      iter_x++;
+      iter_y++;
+      iter_z++;
+
+      iter_r++;
+      iter_g++;
+      iter_b++;
+
+
+      // memcpy(&cloud->data[i * cloud->point_step + cloud->fields[0].offset], &c.x, sizeof(float));
+      // memcpy(&cloud->data[i * cloud->point_step + cloud->fields[1].offset], &c.y, sizeof(float));
+      // memcpy(&cloud->data[i * cloud->point_step + cloud->fields[2].offset], &c.z, sizeof(float));
+
+      // uint8_t r = g_colors_r[c.status] * 255.0;
+      // uint8_t g = g_colors_g[c.status] * 255.0;
+      // uint8_t b = g_colors_b[c.status] * 255.0;
       // uint32_t a = g_colors_a[c.status] * 255.0;
-      memcpy(&cloud->data[i * cloud->point_step + cloud->fields[3].offset], &r, sizeof(uint8_t));
-      memcpy(&cloud->data[i * cloud->point_step + cloud->fields[4].offset], &g, sizeof(uint8_t));
-      memcpy(&cloud->data[i * cloud->point_step + cloud->fields[5].offset], &b, sizeof(uint8_t));
+
+      // memcpy(&cloud->data[i * cloud->point_step + cloud->fields[3].offset], &r, sizeof(uint8_t));
+      // memcpy(&cloud->data[i * cloud->point_step + cloud->fields[4].offset], &g, sizeof(uint8_t));
+      // memcpy(&cloud->data[i * cloud->point_step + cloud->fields[5].offset], &b, sizeof(uint8_t));
 
     }
 
