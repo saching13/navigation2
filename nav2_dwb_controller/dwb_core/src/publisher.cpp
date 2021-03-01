@@ -43,6 +43,7 @@
 #include "nav_2d_utils/conversions.hpp"
 #include "nav2_util/node_utils.hpp"
 #include "sensor_msgs/msg/point_cloud2.hpp"
+#include "sensor_msgs/point_cloud2_iterator.hpp"
 #include "visualization_msgs/msg/marker_array.hpp"
 #include "visualization_msgs/msg/marker.hpp"
 
@@ -304,7 +305,7 @@ DWBPublisher::publishCostGrid(
       continue;
     }
     double scale = critic->getScale();
-    for (i = 0; i < size_x * size_y; i++) {
+    for (unsigned int i = 0; i < size_x * size_y; i++) {
       total_cost[i] += cost_channels[channel_index].second[i] * scale;
     }
   }
@@ -321,7 +322,7 @@ DWBPublisher::publishCostGrid(
   for(size_t i = 0; i < cost_grid_pc->fields.size(); ++i, offset += 4){
     cost_grid_pc->fields[i].offset   = offset;
     cost_grid_pc->fields[i].count    = 1; 
-    cost_grid_pc->fields[i].datatype = sensor_msgs::msg::PointField::FLAOT32;
+    cost_grid_pc->fields[i].datatype = sensor_msgs::msg::PointField::FLOAT32;
     if (i >= 3){
       cost_grid_pc->fields[i].name = cost_channels[i - 3].first;
     }
@@ -353,11 +354,11 @@ DWBPublisher::publishCostGrid(
       
       for(size_t i = 3; i < pcl2_iter.size(); ++i){
         *pcl2_iter[i] = cost_channels[i - 3].second[j];
-        pcl2_iter[i]++;
+        ++pcl2_iter[i];
       }
-      pcl2_iter[0]++;
-      pcl2_iter[1]++;
-      pcl2_iter[2]++;
+      ++pcl2_iter[0];
+      ++pcl2_iter[1];
+      ++pcl2_iter[2];
       j++;
     }
   }

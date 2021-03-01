@@ -177,7 +177,7 @@ void MapGridCritic::addCriticVisualization(std::vector<std::pair<std::string, st
     }
   }
   // This works with the assumption that multiple critics doesn't have same name. Is that the fact ?
-  cost_channels.channels.push_back(grid_scores);
+  cost_channels.push_back(grid_scores);
 }
 
 }  // namespace dwb_critics

@@ -320,7 +320,7 @@ void VoxelLayer::raytraceFreespace(
     clearing_endpoints_->data.clear();
     clearing_endpoints_->width = clearing_observation.cloud_->width;
     clearing_endpoints_->height = clearing_observation.cloud_->height;
-    clearing_endpoints_->is_dense = true // are there no invalid points in the cloud ?
+    clearing_endpoints_->is_dense = true; // are there no invalid points in the cloud ?
     clearing_endpoints_->is_bigendian = false;
     
   }
@@ -335,7 +335,7 @@ void VoxelLayer::raytraceFreespace(
   for(size_t i = 0; i < clearing_endpoints_->fields.size(); ++i, offset += 4){
     clearing_endpoints_->fields[i].offset   = offset;
     clearing_endpoints_->fields[i].count    = 1; 
-    clearing_endpoints_->fields[i].datatype = sensor_msgs::msg::PointField::FLAOT32;
+    clearing_endpoints_->fields[i].datatype = sensor_msgs::msg::PointField::FLOAT32;
   }
    
   clearing_endpoints_->fields[0].name = "x"; 
@@ -358,9 +358,9 @@ void VoxelLayer::raytraceFreespace(
   sensor_msgs::PointCloud2ConstIterator<float> iter_y(*(clearing_observation.cloud_), "y");
   sensor_msgs::PointCloud2ConstIterator<float> iter_z(*(clearing_observation.cloud_), "z");
 
-  sensor_msgs::PointCloud2ConstIterator<float> clearing_ep_iter_x(*clearing_endpoints_, "x");
-  sensor_msgs::PointCloud2ConstIterator<float> clearing_ep_iter_y(*clearing_endpoints_, "y");
-  sensor_msgs::PointCloud2ConstIterator<float> clearing_ep_iter_z(*clearing_endpoints_, "z");
+  sensor_msgs::PointCloud2Iterator<float> clearing_ep_iter_x(*clearing_endpoints_, "x");
+  sensor_msgs::PointCloud2Iterator<float> clearing_ep_iter_y(*clearing_endpoints_, "y");
+  sensor_msgs::PointCloud2Iterator<float> clearing_ep_iter_z(*clearing_endpoints_, "z");
 
   for (; iter_x != iter_x.end(); ++iter_x, ++iter_y, ++iter_z) {
     double wpx = *iter_x;
@@ -435,9 +435,9 @@ void VoxelLayer::raytraceFreespace(
         *clearing_ep_iter_y = wpy;
         *clearing_ep_iter_z = wpz;
         
-        clearing_ep_iter_x++;
-        clearing_ep_iter_y++;
-        clearing_ep_iter_z++; 
+        ++clearing_ep_iter_x;
+        ++clearing_ep_iter_y;
+        ++clearing_ep_iter_z; 
       }
     }
   }

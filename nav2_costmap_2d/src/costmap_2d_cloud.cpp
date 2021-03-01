@@ -32,6 +32,7 @@
 
 #include "rclcpp/rclcpp.hpp"
 #include "sensor_msgs/msg/point_cloud2.hpp"
+#include "sensor_msgs/point_cloud2_iterator.hpp"
 #include "sensor_msgs/msg/channel_float32.hpp"
 #include "nav2_voxel_grid/voxel_grid.hpp"
 #include "nav2_msgs/msg/voxel_grid.hpp"
@@ -88,7 +89,7 @@ void pointCloud2Helper(std::unique_ptr<sensor_msgs::msg::PointCloud2>& cloud, ui
       cloud->fields[i].offset   = offset;
       cloud->fields[i].count    = 1; 
       if (i < 3){
-        cloud->fields[i].datatype = sensor_msgs::msg::PointField::FLAOT32;
+        cloud->fields[i].datatype = sensor_msgs::msg::PointField::FLOAT32;
         offset += 4;
       }
       else{
@@ -127,13 +128,13 @@ void pointCloud2Helper(std::unique_ptr<sensor_msgs::msg::PointCloud2>& cloud, ui
       *iter_g = g_colors_g[c.status] * 255.0;
       *iter_b = g_colors_b[c.status] * 255.0;
 
-      iter_x++;
-      iter_y++;
-      iter_z++;
+      ++iter_x;
+      ++iter_y;
+      ++iter_z;
 
-      iter_r++;
-      iter_g++;
-      iter_b++;
+      ++iter_r;
+      ++iter_g;
+      ++iter_b;
 
 
       // memcpy(&cloud->data[i * cloud->point_step + cloud->fields[0].offset], &c.x, sizeof(float));
