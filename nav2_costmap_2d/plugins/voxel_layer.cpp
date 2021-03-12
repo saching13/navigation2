@@ -94,7 +94,8 @@ void VoxelLayer::onInitialize()
 
   clearing_endpoints_pub_ = node_->create_publisher<sensor_msgs::msg::PointCloud2>(
     "clearing_endpoints", custom_qos);
-
+  clearing_endpoints_pub_->on_activate();
+  
   unknown_threshold_ += (VOXEL_BITS - size_z_);
   matchSize();
 }
@@ -315,14 +316,11 @@ void VoxelLayer::raytraceFreespace(
 
   bool publish_clearing_points = (node_->count_subscribers("clearing_endpoints") > 0);
   if (publish_clearing_points) {
-    // clearing_endpoints_->points.clear();
-    // clearing_endpoints_->points.reserve(clearing_observation_cloud_size);
     clearing_endpoints_->data.clear();
     clearing_endpoints_->width = clearing_observation.cloud_->width;
     clearing_endpoints_->height = clearing_observation.cloud_->height;
     clearing_endpoints_->is_dense = true; // are there no invalid points in the cloud ?
-    clearing_endpoints_->is_bigendian = false;
-    
+    clearing_endpoints_->is_bigendian = false;    
   }
   else{
     clearing_endpoints_->width  = 0;
@@ -345,10 +343,6 @@ void VoxelLayer::raytraceFreespace(
   clearing_endpoints_->row_step = clearing_endpoints_->point_step * clearing_endpoints_->width;
   clearing_endpoints_->data.resize(clearing_endpoints_->row_step * clearing_endpoints_->height);
   
-  // TODO(sachin): Remove these prints before PR
-  std::cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~ testing -- logging ~~~~~~~~~~~~~~~~~~~~~~~~~~~ " << std::endl;
-  std::cout << "clearing_endpoints_->row_step " << clearing_endpoints_->row_step << "  data size " << clearing_endpoints_->data.size() << std::endl; 
-
   // we can pre-compute the enpoints of the map outside of the inner loop... we'll need these later
   double map_end_x = origin_x_ + getSizeInMetersX();
   double map_end_y = origin_y_ + getSizeInMetersY();
